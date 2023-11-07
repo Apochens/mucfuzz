@@ -82,7 +82,24 @@ impl Executor {
             cmd.uses_asan,
             cmd.time_limit,
             cmd.mem_limit,
+
+            cmd.hostaddr.clone(),
         ));
+        
+        // if cmd.netmode {
+        //     None
+        // } else {
+        //     Some(forksrv::Forksrv::new(
+        //         &cmd.forksrv_socket_path,
+        //         &cmd.main,
+        //         &envs,
+        //         fd.as_raw_fd(),
+        //         cmd.is_stdin,
+        //         cmd.uses_asan,
+        //         cmd.time_limit,
+        //         cmd.mem_limit,
+        //     ))
+        // };
 
         let is_directed = cmd.directed_only;
 
@@ -122,6 +139,8 @@ impl Executor {
             self.cmd.uses_asan,
             self.cmd.time_limit,
             self.cmd.mem_limit,
+
+            self.cmd.hostaddr.clone(),
         );
         self.forksrv = Some(fs);
     }

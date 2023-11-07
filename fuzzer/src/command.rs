@@ -33,6 +33,22 @@ impl InstrumentationMode {
 }
 
 #[derive(Debug, Clone)]
+pub enum SocketType {
+    TCP(String),
+    UDP(String),
+}
+
+impl SocketType {
+    pub fn copy(&self) -> SocketType {
+        match self {
+            SocketType::TCP(addr) => SocketType::TCP(addr.to_string()),
+            SocketType::UDP(addr) => SocketType::UDP(addr.to_string()),
+        }
+    }
+}
+
+
+#[derive(Debug, Clone)]
 pub struct CommandOpt {
     pub mode: InstrumentationMode,
     pub id: usize,
@@ -56,7 +72,7 @@ pub struct CommandOpt {
     pub directed_only: bool,
 
     /* mucfuzzer */
-    pub netmode: bool,
+    pub hostaddr: Option<SocketType>,
 }
 
 pub fn make_absolute(path: &Path) -> PathBuf {
@@ -92,7 +108,7 @@ impl CommandOpt {
         directed_only: bool,
 
         /* mucfuzzer */
-        netmode: bool,
+        hostaddr: Option<&str>,
     ) -> Self {
         let mode = InstrumentationMode::from(mode);
         
@@ -159,13 +175,24 @@ impl CommandOpt {
         }
         let sanopt_bin = sanopt_target.map(|s| s.to_string());
 
+        let hostaddr = if let Some(addr) = hostaddr {
+            match &addr[..3] {
+                "tcp" => Some(SocketType::TCP(String::from(&addr[6..]))),
+                "udp" => Some(SocketType::UDP(String::from(&addr[6..]))),
+                _ => {
+                    error!("Wrong host address format: {}. Please give the right host address like [tcp|udp]://<ipaddr>:<port>", &addr[..3]);
+                    panic!()
+                }
+            }
+        } else { None };
+
         Self {
             mode,
             id: 0,
             main: (main_bin, main_args),
             track: (track_bin, track_args),
             tmp_dir,
-            out_file: out_file,
+            out_file,
             forksrv_socket_path,
             track_path,
             is_stdin: !has_input_arg,
@@ -180,7 +207,7 @@ impl CommandOpt {
             directed_targets_file: directed_targets_file.to_string(),
             sanopt_bin,
             directed_only,
-            netmode,
+            hostaddr,
         }
     }
 

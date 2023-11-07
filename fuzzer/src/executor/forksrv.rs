@@ -1,6 +1,9 @@
+use crate::command::SocketType;
+
 use super::{limit::SetLimit, *};
 use angora_common::defs::*;
 use byteorder::{LittleEndian, ReadBytesExt};
+use chrono::format;
 use libc;
 use std::{
     collections::HashMap,
@@ -12,7 +15,7 @@ use std::{
     },
     path::Path,
     process::{Command, Stdio},
-    time::Duration,
+    time::Duration, net::{TcpStream, UdpSocket},
 };
 
 // Just meaningless value for forking a new child
@@ -24,6 +27,9 @@ pub struct Forksrv {
     pub socket: UnixStream,
     uses_asan: bool,
     is_stdin: bool,
+
+    /* mucfuzzer */
+    hostaddr: Option<SocketType>,
 }
 
 impl Forksrv {
@@ -36,6 +42,9 @@ impl Forksrv {
         uses_asan: bool,
         time_limit: u64,
         mem_limit: u64,
+
+        /* mucfuzzer */
+        hostaddr: Option<SocketType>,
     ) -> Forksrv {
         debug!("socket_path: {:?}", socket_path);
         let listener = match UnixListener::bind(socket_path) {
@@ -90,6 +99,7 @@ impl Forksrv {
             socket,
             uses_asan,
             is_stdin,
+            hostaddr,
         }
     }
 
@@ -121,6 +131,22 @@ impl Forksrv {
             Err(error) => {
                 warn!("Fail to read child_id -- {}", error);
                 return StatusType::Error;
+            }
+        }
+
+        {
+            if let Some(socket_type) = &self.hostaddr {
+                match socket_type {
+                    SocketType::TCP(addr) => {
+                        let mut socket = TcpStream::connect(addr).expect(&format!("Cannot connect to the host {}", addr));
+                        println!("Connected successfully!");
+                    },
+                    SocketType::UDP(addr) => {
+                        let mut socket = UdpSocket::bind("127.0.0.1:8001").expect("Cannot create a UDP socket at 127.0.0.1:8001");
+                        socket.connect(addr).expect(&format!("Cannot connect to the host {}", addr));
+                    },
+                }
+
             }
         }
 

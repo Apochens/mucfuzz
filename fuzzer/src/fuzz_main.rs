@@ -37,7 +37,7 @@ pub fn fuzz_main(
     directed_only: bool,
 
     /* mucfuzzer */
-    netmode: bool,
+    hostaddr: Option<&str>,
 ) {
     pretty_env_logger::init();
 
@@ -58,7 +58,7 @@ pub fn fuzz_main(
         cfg_input_file,
         sanopt_target,
         directed_only,
-        netmode,
+        hostaddr,
     );
     info!("{:?}", command_option);
 

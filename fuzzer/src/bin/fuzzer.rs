@@ -102,6 +102,8 @@ fn main() {
         .arg(Arg::with_name("network_protocol_mode")
             .short("n")
             .long("netmode")
+            .value_name("HOST_ADDRESS")
+            .takes_value(true)
             .help("Enable the support for network protocol servers"))
         .get_matches();
 
@@ -123,6 +125,6 @@ fn main() {
         matches.occurrences_of("only_directed") > 0,
 
         /* mucfuzzer */
-        matches.occurrences_of("network_protocol_mode") > 0,
+        matches.value_of("network_protocol_mode"),
     );
 }
