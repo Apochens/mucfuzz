@@ -97,6 +97,12 @@ fn main() {
             .short("D")
             .long("only_directed")
             .help("Only consider CMPs that have a path to one of the targets (Warn: only use if static CFG is sufficient.)"))
+        
+        /* mucfuzzer */
+        .arg(Arg::with_name("network_protocol_mode")
+            .short("n")
+            .long("netmode")
+            .help("Enable the support for network protocol servers"))
         .get_matches();
 
     fuzz_main(
@@ -115,5 +121,8 @@ fn main() {
         matches.value_of("cfg_file").unwrap(),
         matches.value_of("sanopt_target"),
         matches.occurrences_of("only_directed") > 0,
+
+        /* mucfuzzer */
+        matches.occurrences_of("network_protocol_mode") > 0,
     );
 }

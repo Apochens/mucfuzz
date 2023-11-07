@@ -284,9 +284,31 @@ impl Executor {
         self.do_if_has_new(buf, status, false, 0);
     }
 
+    /// Execute the seed in netmode (mucfuzzer)
+    fn run_in_netmode(&mut self, buf: &Vec<u8>) {   
+
+
+    }
+
     fn run_init(&mut self) {
         self.has_new_path = false;
         self.local_stats.num_exec.count();
+    }
+
+    fn run_inner(&mut self, buf: &Vec<u8>) -> StatusType {
+        self.write_test(buf);
+
+        self.branches.clear_trace();
+
+        compiler_fence(Ordering::SeqCst);
+        let ret_status = if let Some(ref mut fs) = self.forksrv {
+            fs.run()
+        } else {
+            self.run_target(&self.cmd.main, self.cmd.mem_limit, self.cmd.time_limit)
+        };
+        compiler_fence(Ordering::SeqCst);
+
+        ret_status
     }
 
     fn check_timeout(&mut self, status: StatusType, cond: &mut cond_stmt::CondStmt) -> StatusType {
@@ -306,22 +328,6 @@ impl Executor {
         } else {
             self.tmout_cnt = 0;
         };
-
-        ret_status
-    }
-
-    fn run_inner(&mut self, buf: &Vec<u8>) -> StatusType {
-        self.write_test(buf);
-
-        self.branches.clear_trace();
-
-        compiler_fence(Ordering::SeqCst);
-        let ret_status = if let Some(ref mut fs) = self.forksrv {
-            fs.run()
-        } else {
-            self.run_target(&self.cmd.main, self.cmd.mem_limit, self.cmd.time_limit)
-        };
-        compiler_fence(Ordering::SeqCst);
 
         ret_status
     }

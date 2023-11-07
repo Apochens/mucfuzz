@@ -54,6 +54,9 @@ pub struct CommandOpt {
     pub directed_targets_file: String,
     pub sanopt_bin: Option<String>,
     pub directed_only: bool,
+
+    /* mucfuzzer */
+    pub netmode: bool,
 }
 
 pub fn make_absolute(path: &Path) -> PathBuf {
@@ -87,6 +90,9 @@ impl CommandOpt {
         directed_targets_file: &str,
         sanopt_target: Option<&str>,
         directed_only: bool,
+
+        /* mucfuzzer */
+        netmode: bool,
     ) -> Self {
         let mode = InstrumentationMode::from(mode);
         
@@ -174,6 +180,7 @@ impl CommandOpt {
             directed_targets_file: directed_targets_file.to_string(),
             sanopt_bin,
             directed_only,
+            netmode,
         }
     }
 
