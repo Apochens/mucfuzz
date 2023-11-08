@@ -138,12 +138,15 @@ impl Forksrv {
             if let Some(socket_type) = &self.hostaddr {
                 match socket_type {
                     SocketType::TCP(addr) => {
-                        let mut socket = TcpStream::connect(addr).expect(&format!("Cannot connect to the host {}", addr));
-                        println!("Connected successfully!");
+                        std::thread::sleep(std::time::Duration::from_millis(100));
+                        let mut socket = TcpStream::connect(addr).expect(&format!("Cannot connect to the host {}({})", addr, child_pid));
+                        debug!("Connect to {}({}) successfully!", addr, child_pid);
+
                     },
                     SocketType::UDP(addr) => {
                         let mut socket = UdpSocket::bind("127.0.0.1:8001").expect("Cannot create a UDP socket at 127.0.0.1:8001");
                         socket.connect(addr).expect(&format!("Cannot connect to the host {}", addr));
+                        debug!("Connect to {} successfully!", addr);
                     },
                 }
 
@@ -169,11 +172,13 @@ impl Forksrv {
                     debug!("Crash code: {}", status);
                     StatusType::Crash
                 } else {
+                    debug!("Normal exit: {}", status);
                     StatusType::Normal
                 }
             }
 
             Err(_) => {
+                debug!("Killing the forked server...");
                 unsafe {
                     libc::kill(child_pid, libc::SIGKILL);
                 }

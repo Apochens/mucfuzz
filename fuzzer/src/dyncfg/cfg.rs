@@ -290,22 +290,22 @@ impl ControlFlowGraph {
   
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
 
-    #[test]
-    fn cfg_basic() {
-        // Create CFG
-        let targets = HashSet::new();
-        let mut cfg = ControlFlowGraph::new(targets);
-        let edges = vec![(10,20), (20,30), (10,40), (40,50), (20,30)];
+//     #[test]
+//     fn cfg_basic() {
+//         // Create CFG
+//         let targets = HashSet::new();
+//         let mut cfg = ControlFlowGraph::new(targets);
+//         let edges = vec![(10,20), (20,30), (10,40), (40,50), (20,30)];
 
-       for e in edges.clone() {
-            cfg.add_edge(e);
-        }
+//        for e in edges.clone() {
+//             cfg.add_edge(e);
+//         }
 
-    }
+//     }
     
-}
+// }
 

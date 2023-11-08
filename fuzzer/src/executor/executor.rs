@@ -315,6 +315,7 @@ impl Executor {
     }
 
     fn run_inner(&mut self, buf: &Vec<u8>) -> StatusType {
+        println!("{:?}", &buf[..]);
         self.write_test(buf);
 
         self.branches.clear_trace();

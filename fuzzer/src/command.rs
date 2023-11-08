@@ -175,6 +175,7 @@ impl CommandOpt {
         }
         let sanopt_bin = sanopt_target.map(|s| s.to_string());
 
+        /* mucfuzzer: begin */
         let hostaddr = if let Some(addr) = hostaddr {
             match &addr[..3] {
                 "tcp" => Some(SocketType::TCP(String::from(&addr[6..]))),
@@ -185,6 +186,7 @@ impl CommandOpt {
                 }
             }
         } else { None };
+        /* mucfuzzer: end */
 
         Self {
             mode,

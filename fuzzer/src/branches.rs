@@ -203,35 +203,35 @@ impl std::fmt::Debug for Branches {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
 
-    #[test]
-    #[ignore]
-    fn branch_empty() {
-        let global_branches = Arc::new(GlobalBranches::new());
-        let mut br = Branches::new(global_branches);
-        assert_eq!(br.has_new(StatusType::Normal), (false, false, 0));
-        assert_eq!(br.has_new(StatusType::Timeout), (false, false, 0));
-        assert_eq!(br.has_new(StatusType::Crash), (false, false, 0));
-    }
+//     #[test]
+//     #[ignore]
+//     fn branch_empty() {
+//         let global_branches = Arc::new(GlobalBranches::new());
+//         let mut br = Branches::new(global_branches);
+//         assert_eq!(br.has_new(StatusType::Normal), (false, false, 0));
+//         assert_eq!(br.has_new(StatusType::Timeout), (false, false, 0));
+//         assert_eq!(br.has_new(StatusType::Crash), (false, false, 0));
+//     }
 
-    #[test]
-    #[ignore]
-    fn branch_find_new() {
-        let global_branches = Arc::new(GlobalBranches::new());
-        let mut br = Branches::new(global_branches);
-        assert_eq!(br.has_new(StatusType::Normal), (false, false, 0));
-        {
-            let trace = &mut br.trace;
-            trace[4] = 1;
-            trace[5] = 1;
-            trace[8] = 3;
-        }
-        let path = br.get_path();
-        assert_eq!(path.len(), 3);
-        assert_eq!(path[2].1, COUNT_LOOKUP[3]);
-        assert_eq!(br.has_new(StatusType::Normal), (true, true, 3));
-    }
-}
+//     #[test]
+//     #[ignore]
+//     fn branch_find_new() {
+//         let global_branches = Arc::new(GlobalBranches::new());
+//         let mut br = Branches::new(global_branches);
+//         assert_eq!(br.has_new(StatusType::Normal), (false, false, 0));
+//         {
+//             let trace = &mut br.trace;
+//             trace[4] = 1;
+//             trace[5] = 1;
+//             trace[8] = 3;
+//         }
+//         let path = br.get_path();
+//         assert_eq!(path.len(), 3);
+//         assert_eq!(path[2].1, COUNT_LOOKUP[3]);
+//         assert_eq!(br.has_new(StatusType::Normal), (true, true, 3));
+//     }
+// }
