@@ -3,17 +3,16 @@ use crate::command::SocketType;
 use super::{limit::SetLimit, *};
 use angora_common::defs::*;
 use byteorder::{LittleEndian, ReadBytesExt};
-use chrono::format;
 use libc;
 use std::{
     collections::HashMap,
-    fs,
+    fs::{self, File},
     io::prelude::*,
     os::unix::{
         io::RawFd,
         net::{UnixListener, UnixStream},
     },
-    path::Path,
+    path::{Path, PathBuf},
     process::{Command, Stdio},
     time::Duration, net::{TcpStream, UdpSocket},
 };
@@ -30,6 +29,7 @@ pub struct Forksrv {
 
     /* mucfuzzer */
     hostaddr: Option<SocketType>,
+    input_path: String,
 }
 
 impl Forksrv {
@@ -42,9 +42,10 @@ impl Forksrv {
         uses_asan: bool,
         time_limit: u64,
         mem_limit: u64,
-
+        
         /* mucfuzzer */
         hostaddr: Option<SocketType>,
+        input_path: &str,
     ) -> Forksrv {
         debug!("socket_path: {:?}", socket_path);
         let listener = match UnixListener::bind(socket_path) {
@@ -100,6 +101,7 @@ impl Forksrv {
             uses_asan,
             is_stdin,
             hostaddr,
+            input_path: input_path.to_owned(),
         }
     }
 
@@ -134,14 +136,33 @@ impl Forksrv {
             }
         }
 
+        /* mucfuzz */
         {
+            let mut buf = Vec::new();
+            match File::open(&self.input_path) {
+                Ok(mut f) => {
+                    if f.read_to_end(&mut buf).is_err() {
+                        panic!("Cannot read {}", &self.input_path);
+                    }
+                },
+                Err(e) => {
+                    panic!("Cannot open {} -- {}", &self.input_path, e);
+                },
+            }
+
             if let Some(socket_type) = &self.hostaddr {
                 match socket_type {
                     SocketType::TCP(addr) => {
                         std::thread::sleep(std::time::Duration::from_millis(100));
-                        let mut socket = TcpStream::connect(addr).expect(&format!("Cannot connect to the host {}({})", addr, child_pid));
-                        debug!("Connect to {}({}) successfully!", addr, child_pid);
+                        let mut socket = TcpStream::connect(addr).expect(&format!("Cannot connect to the host {}", addr));
+                        debug!("Connect to {} ({}) successfully!", addr, child_pid);
 
+                        let writed_size = socket.write(&buf).expect("Cannot write to the server");
+                        debug!("Write {} bytes to server.", writed_size);
+
+                        let mut recv_buf = Vec::new();
+                        let read_size = socket.read(&mut recv_buf).unwrap();
+                        debug!("Recv {} bytes: {:?}", read_size, &recv_buf);
                     },
                     SocketType::UDP(addr) => {
                         let mut socket = UdpSocket::bind("127.0.0.1:8001").expect("Cannot create a UDP socket at 127.0.0.1:8001");
@@ -152,6 +173,7 @@ impl Forksrv {
 
             }
         }
+        /* mucfuzz */
 
         buf = vec![0; 4];
 
@@ -200,6 +222,9 @@ impl Drop for Forksrv {
         if self.socket.write(&fin).is_err() {
             debug!("Fail to write socket !!  FIN ");
         }
+        let out = Command::new("pgrep").arg("fftp.fast").output().unwrap();
+        println!("forksrv::drop - {:?} ", &String::from_utf8(out.stdout));
+
         let path = Path::new(&self.path);
         if path.exists() {
             if fs::remove_file(&self.path).is_err() {

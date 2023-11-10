@@ -7,3 +7,5 @@ sock = socket.socket()
 sock.connect(("127.0.0.1", 2200))
 
 sock.send(b"USER ubuntu\r\n\r\nPASS ubuntu\r\n")
+
+sock.close()

@@ -8,7 +8,7 @@ use std::{
     sync::{
         atomic::{AtomicBool, Ordering},
         Arc,
-    },
+    }
 };
 
 pub fn sync_depot(executor: &mut Executor, running: Arc<AtomicBool>, dir: &Path) {

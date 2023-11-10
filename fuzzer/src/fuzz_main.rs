@@ -2,6 +2,7 @@ use crate::stats::*;
 use crate::dyncfg::{cfg::ControlFlowGraph, fparse::parse_targets_file};
 use angora_common::defs;
 use chrono::prelude::Local;
+use std::process::Command;
 use std::{
     collections::HashMap,
     fs,

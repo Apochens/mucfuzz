@@ -3,7 +3,7 @@ use super::{limit::SetLimit, *};
 use crate::{
     branches, command,
     cond_stmt::{self, NextState},
-    depot, stats, track,
+    depot::{self, read_from_file}, stats, track,
     dyncfg::cfg::CmpId,
 };
 use angora_common::{config, defs, tag::TagSeg};
@@ -16,7 +16,7 @@ use std::{
         atomic::{compiler_fence, Ordering},
         Arc, RwLock,
     },
-    time,
+    time, fs::File, io::{Read, Write}, net::TcpStream,
 };
 use wait_timeout::ChildExt;
 use itertools::Itertools;
@@ -73,33 +73,25 @@ impl Executor {
         );
 
         let fd = pipe_fd::PipeFd::new(&cmd.out_file);
-        let forksrv = Some(forksrv::Forksrv::new(
-            &cmd.forksrv_socket_path,
-            &cmd.main,
-            &envs,
-            fd.as_raw_fd(),
-            cmd.is_stdin,
-            cmd.uses_asan,
-            cmd.time_limit,
-            cmd.mem_limit,
-
-            cmd.hostaddr.clone(),
-        ));
+        let forksrv = if cmd.hostaddr.is_some() {
+            None
+        }  else {
+            Some(forksrv::Forksrv::new(
+                &cmd.forksrv_socket_path,
+                &cmd.main,
+                &envs,
+                fd.as_raw_fd(),
+                cmd.is_stdin,
+                cmd.uses_asan,
+                cmd.time_limit,
+                cmd.mem_limit,
+                
+                cmd.hostaddr.clone(),
+                &cmd.out_file,
+            ))
+        };
         
-        // if cmd.netmode {
-        //     None
-        // } else {
-        //     Some(forksrv::Forksrv::new(
-        //         &cmd.forksrv_socket_path,
-        //         &cmd.main,
-        //         &envs,
-        //         fd.as_raw_fd(),
-        //         cmd.is_stdin,
-        //         cmd.uses_asan,
-        //         cmd.time_limit,
-        //         cmd.mem_limit,
-        //     ))
-        // };
+        
 
         let is_directed = cmd.directed_only;
 
@@ -129,6 +121,9 @@ impl Executor {
         {
             // delete the old forksrv
             self.forksrv = None;
+            if self.cmd.hostaddr.is_some() {
+                return ;
+            }
         }
         let fs = forksrv::Forksrv::new(
             &self.cmd.forksrv_socket_path,
@@ -139,8 +134,9 @@ impl Executor {
             self.cmd.uses_asan,
             self.cmd.time_limit,
             self.cmd.mem_limit,
-
+            
             self.cmd.hostaddr.clone(),
+            &self.cmd.out_file,
         );
         self.forksrv = Some(fs);
     }
@@ -252,9 +248,11 @@ impl Executor {
 
     fn do_if_has_new(&mut self, buf: &Vec<u8>, status: StatusType, _explored: bool, cmpid: u32) {
         // new edge: one byte in bitmap
+        debug!("Target exits with {:?}", &status);
         let (has_new_path, has_new_edge, edge_num) = self.branches.has_new(status, self.is_directed);
 
         if has_new_path {
+            debug!("Has new path found!");
             self.has_new_path = true;
             self.local_stats.find_new(&status);
             let id = self.depot.save(status, &buf, cmpid);
@@ -303,19 +301,12 @@ impl Executor {
         self.do_if_has_new(buf, status, false, 0);
     }
 
-    /// Execute the seed in netmode (mucfuzzer)
-    fn run_in_netmode(&mut self, buf: &Vec<u8>) {   
-
-
-    }
-
     fn run_init(&mut self) {
         self.has_new_path = false;
         self.local_stats.num_exec.count();
     }
 
     fn run_inner(&mut self, buf: &Vec<u8>) -> StatusType {
-        println!("{:?}", &buf[..]);
         self.write_test(buf);
 
         self.branches.clear_trace();
@@ -476,6 +467,10 @@ impl Executor {
     }
 
     fn write_test(&mut self, buf: &Vec<u8>) {
+        // if self.cmd.hostaddr.is_some() {
+        //     return ;
+        // }
+
         self.fd.write_buf(buf);
         if self.cmd.is_stdin {
             self.fd.rewind();
@@ -502,6 +497,42 @@ impl Executor {
             .spawn()
             .expect("Could not run target");
 
+        if let Some(st) = &self.cmd.hostaddr {
+
+            let input_buf = read_from_file(Path::new(&self.cmd.out_file));
+
+            match st {
+                command::SocketType::TCP(addr) => {
+                    std::thread::sleep(std::time::Duration::from_millis(100));
+                    let mut socket = TcpStream::connect(addr).expect(&format!("Cannot connect to the host {}", addr));
+                    debug!("Connect to {} ({}) successfully!", addr, child.id());
+
+                    let writed_size = socket.write(&input_buf).expect("Cannot write to the server");
+                    debug!("Write {} bytes to {}.", writed_size, &addr);
+
+                    let mut recv_buf = vec![0; 400];
+                    let mut recved_msg: Vec<u8> = Vec::new();
+
+                    let mut size = socket.read(&mut recv_buf).unwrap();
+                    while size == recv_buf.len() {
+                        recved_msg.extend(recv_buf);
+                        
+                        recv_buf = vec![0; 400];
+                        debug!("Recv {} bytes: {:?}", size, &recv_buf);
+                        size = socket.read(&mut recv_buf).unwrap();
+                    }
+                    recved_msg.extend(recv_buf);
+                    debug!("Recv {} bytes from {}", recved_msg.len(), &addr);
+                },
+                command::SocketType::UDP(addr) => {
+                    unimplemented!()
+                }
+            } 
+        } else {
+            ()
+        }
+
+
         let timeout = time::Duration::from_secs(time_limit);
         let ret = match child.wait_timeout(timeout).unwrap() {
             Some(status) => {
@@ -525,6 +556,8 @@ impl Executor {
                 StatusType::Timeout
             }
         };
+
+        debug!("Running target exits with {:?}", &ret);
         ret
     }
 
