@@ -52,6 +52,41 @@ fun:main=uninstrumented
 fun:main=discard
 
 ###############################################################################
+# GNUTLS
+###############################################################################
+fun:gnutls_init=uninstrumented
+fun:gnutls_deinit=uninstrumented
+fun:gnutls_bye=uninstrumented
+fun:gnutls_record_send=uninstrumented
+fun:gnutls_priority_set=uninstrumented
+fun:gnutls_handshake_set_timeout=uninstrumented
+fun:gnutls_transport_set_int2=uninstrumented
+fun:gnutls_handshake=uninstrumented
+fun:gnutls_error_is_fatal=uninstrumented
+fun:gnutls_record_recv=uninstrumented
+fun:gnutls_priority_deinit=uninstrumented
+fun:gnutls_certificate_server_set_request=uninstrumented
+fun:gnutls_record_get_max_size=uninstrumented
+fun:gnutls_session_ticket_enable_server=uninstrumented
+fun:gnutls_session_ticket_key_generate=uninstrumented
+fun:gnutls_priority_deinit=uninstrumented
+fun:gnutls_memset=uninstrumented
+fun:gnutls_global_deinit=uninstrumented
+fun:gnutls_global_init=uninstrumented
+fun:gnutls_certificate_set_x509_trust_file=uninstrumented
+fun:gnutls_certificate_allocate_credentials=uninstrumented
+fun:gnutls_certificate_server_set_request=uninstrumented
+fun:gnutls_session_ticket_enable_server=uninstrumented
+fun:gnutls_record_get_max_size=uninstrumented
+fun:gnutls_session_ticket_enable_server=uninstrumented
+fun:gnutls_credentials_set=uninstrumented
+fun:gnutls_priority_init=uninstrumented
+fun:gnutls_certificate_set_known_dh_params=uninstrumented
+fun:gnutls_certificate_set_x509_key_file2=uninstrumented
+fun:gnutls_certificate_free_credentials=uninstrumented
+
+
+###############################################################################
 # DFSan interface functions
 ###############################################################################
 fun:dfsan_union=uninstrumented
