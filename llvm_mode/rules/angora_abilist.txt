@@ -220,3 +220,7 @@ fun:getrandom=discard
 
 fun:fcntl64=uninstrumented
 fun:fcntl64=discard
+
+# mucfuzz
+fun:recv=custom
+fun:recvfrom=custom

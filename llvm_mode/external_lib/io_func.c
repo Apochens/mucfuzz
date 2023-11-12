@@ -255,6 +255,26 @@ __dfsw_read(int fd, void *buf, size_t count, dfsan_label fd_label,
   return ret;
 }
 
+/* MCUFuzz: recv(), recvfrom()*/
+#include <sys/socket.h>
+
+__attribute__((visibility("default"))) ssize_t
+__dfsw_recv(int fd, void *buf, size_t n, int flag, dfsan_label fd_label, 
+            dfsan_label buf_label, dfsan_label n_label, 
+            dfsan_label flag_label, dfsan_label *ret_label) {
+  
+  long offset = 0;
+  ssize_t ret = recv(fd, buf, n, flag);
+#ifdef DEBUG_INFO
+  fprintf(stderr, "### recv %d, received %ld bytes \n", fd, ret);
+#endif
+  if (ret > 0) 
+    assign_taint_labels_exf(buf, offset, ret, n, 1);
+  *ret_label = __angora_get_sp_label(offset, 1);
+  return ret;
+}
+
+
 __attribute__((visibility("default"))) ssize_t
 __dfsw_pread(int fd, void *buf, size_t count, off_t offset,
              dfsan_label fd_label, dfsan_label buf_label,
