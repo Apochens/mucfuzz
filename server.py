@@ -32,9 +32,9 @@ def build_lightftp(source_path: str, bin_path: str):
             exit(-1)
 
     os.chdir(BUILD_DIR)
-    os.system("git clone https://github.com/hfiref0x/LightFTP.git lightftp")
+    os.system(f"git clone https://github.com/hfiref0x/LightFTP.git {source_path}")
 
-    os.chdir("./lightftp")
+    os.chdir(source_path)
     os.system("git checkout 5980ea1")
     os.system("wget https://github.com/profuzzbench/profuzzbench/raw/master/subjects/FTP/LightFTP/fuzzing.patch")
     os.system("patch -p1 < fuzzing.patch")

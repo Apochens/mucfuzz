@@ -91,8 +91,6 @@ impl Executor {
             ))
         };
         
-        
-
         let is_directed = cmd.directed_only;
 
         Self {
