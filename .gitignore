@@ -1,2 +1,7 @@
+bin/
 target/
-seeds/
+llvm_mode/build
+tools/llvm-diff-parmesan/build
+tools/llvm-diff-parmesan/build-pass
+
+parmesan.env
