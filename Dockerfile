@@ -3,29 +3,24 @@ FROM ubuntu:20.04
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
     apt-get -y upgrade && \
-    apt-get install -y git build-essential wget zlib1g-dev golang-go python3-pip python3-dev python-is-python3 build-essential cmake && \
-    #apt-get install -y git build-essential wget zlib1g-dev golang-go python-pip python-dev build-essential cmake && \
+    apt-get install -y git build-essential wget zlib1g-dev python3-pip python3-dev python-is-python3 cmake && \
     apt-get clean
 
+# install rust
+RUN apt-get install -y curl
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
-ENV RUSTUP_HOME=/usr/local/rustup \
-    CARGO_HOME=/usr/local/cargo \
-    PIN_ROOT=/pin-3.7-97619-g0d0c92f4f-gcc-linux \
-    GOPATH=/go \
-    PATH=/clang+llvm/bin:/usr/local/cargo/bin:/parmesan/bin/:/go/bin:$PATH \
+# install go
+RUN wget https://golang.google.cn/dl/go1.17.linux-amd64.tar.gz && \
+    tar -xzf go1.17.linux-amd64.tar.gz && \
+    rm go1.17.linux-amd64.tar.gz
+
+ENV GOPATH=/go-tools \
+    PATH=/clang+llvm/bin:/mucfuzz/bin:/go/bin:/go-tools/bin:$PATH \
     LD_LIBRARY_PATH=/clang+llvm/lib:$LD_LIBRARY_PATH
 
-RUN mkdir -p parmesan
-COPY . parmesan
-WORKDIR parmesan
+RUN git clone https://github.com/Apochens/mucfuzz.git
+WORKDIR /mucfuzz
 
-RUN ./build/install_rust.sh
 RUN PREFIX=/ ./build/install_llvm.sh
 RUN ./build/install_tools.sh
-RUN ./build/build.sh
-#RUN ./build/install_pin_mode.sh
-# ParmeSan does not support PIN atm
-
-VOLUME ["/data"]
-WORKDIR /data
-#ENTRYPOINT [ "/opt/env.init" ]
