@@ -45,34 +45,32 @@ def create_dir_on_absence(path_str: str):
         path.mkdir()
 
 
-def check_exp_dir():
-    create_dir_on_absence(EXP_DIR)
-    create_dir_on_absence(BUILD_DIR)
-
-
-def build_lightftp(source_path: str, bin_path: str, misc_path: str):
-    if os.system("apt install -y gnutls-dev build-essential") != 0:
+def install_dependencies(deps: str):
+    if os.system(f"apt install -y {deps}") != 0:
         print(f"{FAIL} Failed to install dependencies of lightftp, now try with sudo")
-        if os.system("sudo apt install -y gnutls-dev build-essential") != 0:
+        if os.system(f"sudo apt install -y {deps}") != 0:
             print(f"{FAIL} Failed to install dependencies of lightftp with sudo, exit")
             exit(-1)
 
+
+def build_lightftp(source_path: str, bin_path: str, misc_path: str, patch_path: str):
+    install_dependencies("gnutls-dev build-essential")
+    create_dir_on_absence(bin_path)
+
     os.chdir(BUILD_DIR)
     os.system(f"git clone https://github.com/hfiref0x/LightFTP.git {source_path}")
+    if not os.path.exists(source_path):
+        print(f"{FAIL} cloning {LightFTP} failed!")
 
     os.chdir(source_path)
-    os.system("git checkout 5980ea1")
-    os.system("wget https://github.com/profuzzbench/profuzzbench/raw/master/subjects/FTP/LightFTP/fuzzing.patch")
-    os.system("patch -p1 < fuzzing.patch")
+    os.system(f"git checkout 5980ea1 && patch -p1 < {patch_path}")
 
     os.chdir("./Source/Release")
     os.system("make clean && rm -r build")
-    os.system(f"CC=gclang CXX=gclang++ CFLAGS=\"-fPIC\" make && mkdir build && cp fftp build/{LightFTP}")
+    os.system(f"CC=gclang CXX=gclang++ CFLAGS=\"-fPIC\" make && cp fftp {bin_path}/{LightFTP}")
 
-    os.chdir("./build")
+    os.chdir(bin_path)
     os.system(f"get-bc {LightFTP} && CFLAGS=\"-lpthread -lgnutls -fpie -pie\" python3 {COMPILE_BC_PATH} {LightFTP}.bc")
-    create_dir_on_absence(bin_path)
-    os.system(f"cp ./* {bin_path}")
     os.system(f"cp -r {misc_path}/* {bin_path}")
 
     # logging.info(f"{PASS} Build lightftp successfully!")
@@ -84,8 +82,21 @@ def run_lightftp(bin_path):
     os.system(f"fuzzer -i in -o out -c ./targets.json -t ./{LightFTP}.track -s ./{LightFTP}.san.fast -n tcp://127.0.0.1:2200 -- ./{LightFTP}.fast ./fftp.conf 2200")
 
 
-def build_live555(source_path: str, bin_path: str, misc_path: str):
-    pass
+def build_live555(source_path: str, bin_path: str, misc_path: str, patch_path: str):
+    install_dependencies("libssl-dev build-essential")
+    create_dir_on_absence(bin_path)
+
+    os.system(f"git clone https://github.com/rgaufman/live555.git {source_path}")
+    if not os.path.exists(source_path):
+        print(f"{FAIL} cloning {Live555} failed!")
+
+    os.chdir(source_path)
+    os.system(f"git checkout ceeb4f4 && patch -p1 < {patch_path} && ./genMakefiles linux && make clean && CFLAGS=\"-fPIC\" CPPFLAGS=\"-fPIC\" make -j4")
+    os.system(f"cp ./testProgs/testOnDemandRTSPServer {bin_path}/{Live555}")
+
+    # os.chdir(bin_path)
+    # os.system(f"get-bc {Live555} && CFLAGS=\"-lpthread -lgnutls -fpie -pie\" python3 {COMPILE_BC_PATH} {Live555}.bc")
+    # os.system(f"cp -r {misc_path}/* {bin_path}")
 
 
 def run_live555(bin_path):
@@ -127,14 +138,17 @@ if __name__ == "__main__":
     mode: Mode = Mode.get(args.mode)
     server_name: str = args.server_name
 
-    check_exp_dir()
+    create_dir_on_absence(EXP_DIR)
+    create_dir_on_absence(BUILD_DIR)
 
-    source_path = os.path.join(BUILD_DIR, server_name)
-    bin_path = os.path.join(EXP_DIR, server_name)
-    misc_path = os.path.join(ROOT_DIR, "misc", server_name)
-
+    source_path = os.path.join(BUILD_DIR, server_name)              # /experiments/<server>
+    bin_path = os.path.join(EXP_DIR, server_name)                   # /experiments/build/<server>
+    misc_path = os.path.join(ROOT_DIR, "misc", server_name)         # /mucfuzz/misc/<server>
+    patch_path = os.path.join(                                      # /mucfuzz/misc/patch/<server>.patch
+        ROOT_DIR, "misc", "patchs", f"{server_name}.patch") 
+          
     if mode == Mode.BUILD:      # build
-        HANDLERS[mode][server_name](source_path, bin_path, misc_path)
+        HANDLERS[mode][server_name](source_path, bin_path, misc_path, patch_path)
     if mode == Mode.REMOVE:     # remove
         HANDLERS[mode](source_path, bin_path)
     if mode == Mode.RUN:        # run
