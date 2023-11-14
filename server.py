@@ -103,7 +103,7 @@ def run_live555(bin_path):
     os.chdir(bin_path)
     if os.path.exists("./out"):
         os.system("rm -r out")
-    os.system(f"fuzzer -i in -o out -c ./targets.json -t ./{Live555}.track -s ./{Live555}.san.fast -n tcp://127.0.0.1:8554 -- ./{Live555}.fast 8554")
+    os.system(f"RUST_LOG=debug fuzzer -i in -o out -c ./targets.json -t ./{Live555}.track -s ./{Live555}.san.fast -n tcp://127.0.0.1:8554 -- ./{Live555}.fast 8554")
 
 
 def remove_server(source_path: str, bin_path: str):

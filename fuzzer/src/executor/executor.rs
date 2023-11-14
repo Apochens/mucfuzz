@@ -501,26 +501,30 @@ impl Executor {
 
             match st {
                 command::SocketType::TCP(addr) => {
+
+                    // Connect to the server
                     std::thread::sleep(std::time::Duration::from_millis(100));
                     let mut socket = TcpStream::connect(addr).expect(&format!("Cannot connect to the host {}", addr));
                     debug!("Connect to {} ({}) successfully!", addr, child.id());
 
+                    // Send messages to the server
                     let writed_size = socket.write(&input_buf).expect("Cannot write to the server");
                     debug!("Write {} bytes to {}.", writed_size, &addr);
 
-                    let mut recv_buf = vec![0; 400];
+                    // Receive messages from the server
+                    let mut recv_buf = vec![0; config::RECV_BUF_SIZE];
                     let mut recved_msg: Vec<u8> = Vec::new();
 
                     let mut size = socket.read(&mut recv_buf).unwrap();
                     while size == recv_buf.len() {
-                        recved_msg.extend(recv_buf);
-                        
-                        recv_buf = vec![0; 400];
-                        debug!("Recv {} bytes: {:?}", size, &recv_buf);
+                        recved_msg.extend(&recv_buf[..size]);
+                        recv_buf = vec![0; config::RECV_BUF_SIZE];
                         size = socket.read(&mut recv_buf).unwrap();
                     }
-                    recved_msg.extend(recv_buf);
-                    debug!("Recv {} bytes from {}", recved_msg.len(), &addr);
+                    recved_msg.extend(&recv_buf[..size]);
+                    debug!("Recv {} bytes from {}: \n{}", recved_msg.len(), &addr, String::from_utf8(recved_msg.to_vec()).unwrap());
+
+                    socket.shutdown(std::net::Shutdown::Both).unwrap();
                 },
                 command::SocketType::UDP(addr) => {
                     unimplemented!()

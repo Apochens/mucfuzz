@@ -17,7 +17,11 @@ pub const BRANCHES_SIZE: usize = 1 << MAP_SIZE_POW2;
 
 // executor.rs:
 pub const TMOUT_SKIP: usize = 3;
-pub const TIME_LIMIT: u64 = 1;
+// pub const TIME_LIMIT: u64 = 1;
+/* mucfuzz: begin */
+pub const TIME_LIMIT: u64 = 2;  
+pub const RECV_BUF_SIZE: usize = 2048;
+/* mucfuzz: end */
 pub const MEM_LIMIT: u64 = 200; // MB
 pub const TIME_LIMIT_TRACK: u64 = 12;
 pub const MEM_LIMIT_TRACK: u64 = 0;
@@ -26,6 +30,8 @@ pub const MAX_INVARIABLE_NUM: usize = 16;
 pub const MAX_NUM_MINIMAL_OPTIMA_ALL: usize = 28;
 // based the bit bucket: [1], [2], [3], [4, 7], [8, 15], [16, 31], [32, 127], [128, infinity]
 pub const MAX_COND_ORDER: u32 = 16;
+
+
 
 // ************ Mutation ****************
 // SEARCH
