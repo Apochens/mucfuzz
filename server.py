@@ -94,13 +94,16 @@ def build_live555(source_path: str, bin_path: str, misc_path: str, patch_path: s
     os.system(f"git checkout ceeb4f4 && patch -p1 < {patch_path} && ./genMakefiles linux && make clean && CFLAGS=\"-fPIC\" CPPFLAGS=\"-fPIC\" make -j4")
     os.system(f"cp ./testProgs/testOnDemandRTSPServer {bin_path}/{Live555}")
 
-    # os.chdir(bin_path)
-    # os.system(f"get-bc {Live555} && CFLAGS=\"-lpthread -lgnutls -fpie -pie\" python3 {COMPILE_BC_PATH} {Live555}.bc")
-    # os.system(f"cp -r {misc_path}/* {bin_path}")
+    os.chdir(bin_path)
+    os.system(f"get-bc {Live555} && python3 {COMPILE_BC_PATH} {Live555}.bc")
+    os.system(f"cp -r {misc_path}/* {bin_path}")
 
 
 def run_live555(bin_path):
-    pass
+    os.chdir(bin_path)
+    if os.path.exists("./out"):
+        os.system("rm -r out")
+    os.system(f"fuzzer -i in -o out -c ./targets.json -t ./{Live555}.track -s ./{Live555}.san.fast -n tcp://127.0.0.1:8554 -- ./{Live555}.fast 8554")
 
 
 def remove_server(source_path: str, bin_path: str):

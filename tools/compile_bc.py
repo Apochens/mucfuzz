@@ -21,7 +21,7 @@ def run_cmd(cmd):
     logging.info(f" + {cmd}")
     os.system(cmd)
 
-def build_pipeline(bc_file, target_flags="@@", profiling_input_dir="in", is_cpp=False):
+def build_pipeline(bc_file, target_flags="@@", profiling_input_dir="in", is_cpp=True):
     compiler = CXX_BIN if is_cpp else CC_BIN
     cflags = CXXFLAGS if is_cpp else CFLAGS
     name = os.path.splitext(bc_file)[0]
