@@ -274,6 +274,23 @@ __dfsw_recv(int fd, void *buf, size_t n, int flag, dfsan_label fd_label,
   return ret;
 }
 
+__attribute__((visibility("default"))) ssize_t
+__dfsw_recvfrom(int fd, void *buf, size_t n, int flags, struct sockaddr *addr, socklen_t *addr_len, 
+                dfsan_label fd_label, dfsan_label buf_label, dfsan_label n_label, 
+                dfsan_label flags_label, dfsan_label addr_label, dfsan_label addr_len_label, 
+                dfsan_label *ret_label) {
+  
+  long offset = 0;
+  ssize_t ret = recvfrom(fd, buf, n, flags, addr, addr_len);
+#ifdef DEBUG_INFO
+  fprintf(stderr, "### recvfrom %d, received %ld bytes \n", fd, ret);
+#endif
+  if (ret > 0)
+    assign_taint_labels_exf(buf, offset, ret, n, 1);
+  *ret_label = __angora_get_sp_label(offset, 1);
+  return ret;
+}
+
 
 __attribute__((visibility("default"))) ssize_t
 __dfsw_pread(int fd, void *buf, size_t count, off_t offset,
