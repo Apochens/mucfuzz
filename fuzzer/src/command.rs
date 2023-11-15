@@ -1,4 +1,4 @@
-use crate::{check_dep, search, tmpfs};
+use crate::{check_dep, search, tmpfs, mucfuzz::AddrType};
 use angora_common::defs;
 use std::{
     env,
@@ -33,22 +33,6 @@ impl InstrumentationMode {
 }
 
 #[derive(Debug, Clone)]
-pub enum SocketType {
-    TCP(String),
-    UDP(String),
-}
-
-impl SocketType {
-    pub fn copy(&self) -> SocketType {
-        match self {
-            SocketType::TCP(addr) => SocketType::TCP(addr.to_string()),
-            SocketType::UDP(addr) => SocketType::UDP(addr.to_string()),
-        }
-    }
-}
-
-
-#[derive(Debug, Clone)]
 pub struct CommandOpt {
     pub mode: InstrumentationMode,
     pub id: usize,
@@ -72,7 +56,7 @@ pub struct CommandOpt {
     pub directed_only: bool,
 
     /* mucfuzzer */
-    pub hostaddr: Option<SocketType>,
+    pub hostaddr: Option<AddrType>,
 }
 
 pub fn make_absolute(path: &Path) -> PathBuf {
@@ -178,8 +162,8 @@ impl CommandOpt {
         /* mucfuzzer: begin */
         let hostaddr = if let Some(addr) = hostaddr {
             match &addr[..3] {
-                "tcp" => Some(SocketType::TCP(String::from(&addr[6..]))),
-                "udp" => Some(SocketType::UDP(String::from(&addr[6..]))),
+                "tcp" => Some(AddrType::TCP(String::from(&addr[6..]))),
+                "udp" => Some(AddrType::UDP(String::from(&addr[6..]))),
                 _ => {
                     error!("Wrong host address format: {}. Please give the right host address like [tcp|udp]://<ipaddr>:<port>", &addr[..3]);
                     panic!()

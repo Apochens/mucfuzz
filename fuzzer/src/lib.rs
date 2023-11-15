@@ -35,4 +35,6 @@ mod tmpfs;
 mod dyncfg;
 //mod directed;
 
+mod mucfuzz;
+
 pub use crate::fuzz_main::fuzz_main;

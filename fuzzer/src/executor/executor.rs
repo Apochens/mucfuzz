@@ -1,7 +1,7 @@
 use super::{limit::SetLimit, *};
 
 use crate::{
-    branches, command,
+    branches, command, mucfuzz,
     cond_stmt::{self, NextState},
     depot::{self, read_from_file}, stats, track,
     dyncfg::cfg::CmpId,
@@ -500,7 +500,7 @@ impl Executor {
             let input_buf = read_from_file(Path::new(&self.cmd.out_file));
 
             match st {
-                command::SocketType::TCP(addr) => {
+                mucfuzz::AddrType::TCP(addr) => {
 
                     // Connect to the server
                     std::thread::sleep(std::time::Duration::from_millis(100));
@@ -526,7 +526,7 @@ impl Executor {
 
                     socket.shutdown(std::net::Shutdown::Both).unwrap();
                 },
-                command::SocketType::UDP(addr) => {
+                mucfuzz::AddrType::UDP(addr) => {
                     unimplemented!()
                 }
             } 

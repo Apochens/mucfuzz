@@ -70,7 +70,7 @@ def build_lightftp(source_path: str, bin_path: str, misc_path: str, patch_path: 
     os.system(f"CC=gclang CXX=gclang++ CFLAGS=\"-fPIC\" make && cp fftp {bin_path}/{LightFTP}")
 
     os.chdir(bin_path)
-    os.system(f"get-bc {LightFTP} && CFLAGS=\"-lpthread -lgnutls -fpie -pie\" python3 {COMPILE_BC_PATH} {LightFTP}.bc")
+    os.system(f"get-bc {LightFTP} && CFLAGS=\"-lpthread -lgnutls -fpie -pie\" python3 {COMPILE_BC_PATH} C {LightFTP}.bc")
     os.system(f"cp -r {misc_path}/* {bin_path}")
 
     # logging.info(f"{PASS} Build lightftp successfully!")
@@ -95,7 +95,7 @@ def build_live555(source_path: str, bin_path: str, misc_path: str, patch_path: s
     os.system(f"cp ./testProgs/testOnDemandRTSPServer {bin_path}/{Live555}")
 
     os.chdir(bin_path)
-    os.system(f"get-bc {Live555} && python3 {COMPILE_BC_PATH} {Live555}.bc")
+    os.system(f"get-bc {Live555} && python3 {COMPILE_BC_PATH} CPP {Live555}.bc")
     os.system(f"cp -r {misc_path}/* {bin_path}")
 
 

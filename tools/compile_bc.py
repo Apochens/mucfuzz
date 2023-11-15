@@ -2,6 +2,7 @@
 import sys
 import os
 from pathlib import Path
+from argparse import ArgumentParser
 
 import logging
 logging.basicConfig(stream=sys.stderr, level=logging.INFO)
@@ -52,16 +53,16 @@ def build_pipeline(bc_file, target_flags="@@", profiling_input_dir="in", is_cpp=
     print()
 
 def print_usage():
-    print(f"Usage: {sys.argv[0]} BC_FILE [TARGET_PROG_CMD_FLAGS]")
+    print(f"Usage: {sys.argv[0]} <C|CPP> BC_FILE [TARGET_PROG_CMD_FLAGS]")
     print("Where the BC_FILE is an llvm .bc file obtained by, for example, gclang.")
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
+    if len(sys.argv) < 3:
         print_usage()
         sys.exit(1)
-    if len(sys.argv) > 2:
+    if len(sys.argv) > 3:
         # Provide some target program flags (e.g., for objdump, give it -s -d)
-        flags = ' '.join(sys.argv[2:])
-        build_pipeline(sys.argv[1], target_flags=flags)
+        flags = ' '.join(sys.argv[3:])
+        build_pipeline(sys.argv[1], target_flags=flags, is_cpp=True if sys.argv[3:] == "CPP" else False)
     else:
         build_pipeline(sys.argv[1])
