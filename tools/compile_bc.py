@@ -41,10 +41,10 @@ def build_pipeline(bc_file, target_flags="@@", profiling_input_dir="in", is_cpp=
     #6) Gather targets.json and target.diff
     run_cmd(f"{DIFF_BIN} -json {name}.fast.ll {name}.san.ll 2> {name}.diff")
     #7) Gather cmp.map
-    run_cmd(f"opt -load {ID_ASSIGNER_PATH} -idassign -idassign-emit-cfg \
-            -idassign-cfg-file cfg.dat {name}.fast.ll")
+    # run_cmd(f"opt -load {ID_ASSIGNER_PATH} -idassign -idassign-emit-cfg \
+            # -idassign-cfg-file cfg.dat {name}.fast.ll")
     #8) Prune targets
-    run_cmd(f"python {PRUNE_SCRIPT_PATH} {targets_file} {name}.diff cmp.map {profiling_input_dir} ./{name}.track {target_flags} > targets.pruned.json")
+    # run_cmd(f"python {PRUNE_SCRIPT_PATH} {targets_file} {name}.diff cmp.map {profiling_input_dir} ./{name}.track {target_flags} > targets.pruned.json")
 
     # Print fuzzing command
     print("You can now run your target application (with SanOpt enabled) using:")

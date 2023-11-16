@@ -496,14 +496,15 @@ impl Executor {
         if let Some(addr) = &self.cmd.hostaddr {
             // Fetch the testcase
             let input_buf = read_from_file(Path::new(&self.cmd.out_file));
-            debug!("Load testcase: \n{}", String::from_utf8_lossy(&input_buf));
+            // debug!("Load testcase: \n{}", String::from_utf8_lossy(&input_buf));
 
             let mut server = Server::new(addr, &self.cmd.main.0, child.id());
             server.connect().expect("Cannot connect to the server");
             server.execute(&input_buf).expect("Error in executing a testcase");
             server.shutdown().expect("Error in terminating the server");
-            // child.kill().unwrap();
-            // Command::new("kill").args(["-s", "10", &child.id().to_string()]).output().unwrap();
+
+            Command::new("kill").args(["-s", "10", &child.id().to_string()]).output().unwrap();
+            std::thread::sleep(std::time::Duration::from_millis(100));
         }
         /* mucfuzz: end */
 
