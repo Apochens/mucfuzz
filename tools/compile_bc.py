@@ -63,6 +63,6 @@ if __name__ == "__main__":
     if len(sys.argv) > 3:
         # Provide some target program flags (e.g., for objdump, give it -s -d)
         flags = ' '.join(sys.argv[3:])
-        build_pipeline(sys.argv[1], target_flags=flags, is_cpp=True if sys.argv[3:] == "CPP" else False)
+        build_pipeline(sys.argv[2], target_flags=flags, is_cpp=True if sys.argv[1] == "CPP" else False)
     else:
-        build_pipeline(sys.argv[1])
+        build_pipeline(sys.argv[2])

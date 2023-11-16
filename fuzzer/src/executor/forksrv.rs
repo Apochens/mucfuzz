@@ -1,4 +1,4 @@
-use crate::command::SocketType;
+use crate::mucfuzz::HostAddr;
 
 use super::{limit::SetLimit, *};
 use angora_common::defs::*;
@@ -28,7 +28,7 @@ pub struct Forksrv {
     is_stdin: bool,
 
     /* mucfuzzer */
-    hostaddr: Option<SocketType>,
+    hostaddr: Option<HostAddr>,
     input_path: String,
 }
 
@@ -44,7 +44,7 @@ impl Forksrv {
         mem_limit: u64,
         
         /* mucfuzzer */
-        hostaddr: Option<SocketType>,
+        hostaddr: Option<HostAddr>,
         input_path: &str,
     ) -> Forksrv {
         debug!("socket_path: {:?}", socket_path);
@@ -152,7 +152,7 @@ impl Forksrv {
 
             if let Some(socket_type) = &self.hostaddr {
                 match socket_type {
-                    SocketType::TCP(addr) => {
+                    HostAddr::TCP(addr) => {
                         std::thread::sleep(std::time::Duration::from_millis(100));
                         let mut socket = TcpStream::connect(addr).expect(&format!("Cannot connect to the host {}", addr));
                         debug!("Connect to {} ({}) successfully!", addr, child_pid);
@@ -164,7 +164,7 @@ impl Forksrv {
                         let read_size = socket.read(&mut recv_buf).unwrap();
                         debug!("Recv {} bytes: {:?}", read_size, &recv_buf);
                     },
-                    SocketType::UDP(addr) => {
+                    HostAddr::UDP(addr) => {
                         let mut socket = UdpSocket::bind("127.0.0.1:8001").expect("Cannot create a UDP socket at 127.0.0.1:8001");
                         socket.connect(addr).expect(&format!("Cannot connect to the host {}", addr));
                         debug!("Connect to {} successfully!", addr);

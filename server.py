@@ -70,7 +70,7 @@ def build_lightftp(source_path: str, bin_path: str, misc_path: str, patch_path: 
     os.system(f"CC=gclang CXX=gclang++ CFLAGS=\"-fPIC\" make && cp fftp {bin_path}/{LightFTP}")
 
     os.chdir(bin_path)
-    os.system(f"get-bc {LightFTP} && CFLAGS=\"-lpthread -lgnutls -fpie -pie\" python3 {COMPILE_BC_PATH} C {LightFTP}.bc")
+    os.system(f"get-bc {LightFTP} && CFLAGS=\"-lpthread -lgnutls -fpie -pie\" python3 {COMPILE_BC_PATH} C {LightFTP}.bc ./fftp.conf")
     os.system(f"cp -r {misc_path}/* {bin_path}")
 
     # logging.info(f"{PASS} Build lightftp successfully!")
@@ -78,24 +78,27 @@ def build_lightftp(source_path: str, bin_path: str, misc_path: str, patch_path: 
 
 def run_lightftp(bin_path):
     os.chdir(bin_path)
-    os.system("rm -r out && kill -s 9 $(pgrep lightftp.*)")
-    os.system(f"fuzzer -i in -o out -c ./targets.json -t ./{LightFTP}.track -s ./{LightFTP}.san.fast -n tcp://127.0.0.1:2200 -- ./{LightFTP}.fast ./fftp.conf 2200")
+    if os.path.exists("./out"):
+        os.system("rm -r out")
+    # os.system("rm -r out && kill -s 9 $(pgrep lightftp.*)")
+    os.system(f"RUST_LOG=debug fuzzer -i in -o out -c ./targets.json -t ./{LightFTP}.track -s ./{LightFTP}.san.fast -n tcp://127.0.0.1:2200 -- ./{LightFTP}.fast ./fftp.conf 2200")
 
 
 def build_live555(source_path: str, bin_path: str, misc_path: str, patch_path: str):
     install_dependencies("libssl-dev build-essential")
     create_dir_on_absence(bin_path)
 
-    os.system(f"git clone https://github.com/rgaufman/live555.git {source_path}")
+    # os.system(f"git clone https://github.com/rgaufman/live555.git {source_path}")
     if not os.path.exists(source_path):
         print(f"{FAIL} cloning {Live555} failed!")
 
     os.chdir(source_path)
-    os.system(f"git checkout ceeb4f4 && patch -p1 < {patch_path} && ./genMakefiles linux && make clean && CFLAGS=\"-fPIC\" CPPFLAGS=\"-fPIC\" make -j4")
+    # os.system(f"git checkout ceeb4f4 && patch -p1 < {patch_path}")
+    os.system("./genMakefiles linux && make clean && CFLAGS=\"-fPIC\" CXXFLAGS=\"-fPIC\" make -j4")
     os.system(f"cp ./testProgs/testOnDemandRTSPServer {bin_path}/{Live555}")
 
     os.chdir(bin_path)
-    os.system(f"get-bc {Live555} && python3 {COMPILE_BC_PATH} CPP {Live555}.bc")
+    os.system(f"get-bc {Live555} && CXXFLAGS=\"-fpie -pie\" python3 {COMPILE_BC_PATH} CPP {Live555}.bc 8554")
     os.system(f"cp -r {misc_path}/* {bin_path}")
 
 

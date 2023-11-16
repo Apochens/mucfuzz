@@ -39,10 +39,41 @@ index d63d993..3d70357 100644
  
  	free(scb);
 diff --git a/Source/main.c b/Source/main.c
-index eaa1a55..d2c405e 100644
+index eaa1a55..dec4434 100644
 --- a/Source/main.c
 +++ b/Source/main.c
-@@ -106,9 +106,10 @@ int main(int argc, char *argv[])
+@@ -11,6 +11,8 @@
+ #include "ftpserv.h"
+ #include "cfgparse.h"
+ #include "x_malloc.h"
++#include <signal.h>
++#include <unistd.h>
+ 
+ FTP_CONFIG	g_cfg;
+ int			g_log = -1;
+@@ -24,6 +26,12 @@ static	char	CAFILE[PATH_MAX],
+ 				KEYFILE[PATH_MAX],
+ 				KEYFILE_PASS[256];
+ 
++void sig_handler(int signo)
++{
++  if (signo == SIGUSR1)
++    exit(0);
++}
++
+ void TLSInit()
+ {
+ 	while (gnutls_global_init() >= 0)
+@@ -76,7 +84,7 @@ int main(int argc, char *argv[])
+ 	int			c;
+ 	uint32_t	bufsize = 65536;
+ 	pthread_t	thid;
+-
++        signal(SIGUSR1, sig_handler);
+ 	if (sizeof (off_t) != 8)
+ 	{
+ 		printf("off_t is not 64 bits long");
+@@ -106,9 +114,10 @@ int main(int argc, char *argv[])
  		if (ParseConfig(cfg, CONFIG_SECTION_NAME, "local_mask", textbuf, bufsize))
  			g_cfg.LocalIPMask = inet_addr(textbuf);
  
@@ -56,7 +87,7 @@ index eaa1a55..d2c405e 100644
  
  		g_cfg.MaxUsers = 1;
  		if (ParseConfig(cfg, CONFIG_SECTION_NAME, "maxusers", textbuf, bufsize))
-@@ -188,10 +189,8 @@ int main(int argc, char *argv[])
+@@ -188,10 +197,8 @@ int main(int argc, char *argv[])
  			break;
  		}
  

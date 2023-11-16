@@ -1,4 +1,4 @@
-use crate::{check_dep, search, tmpfs, mucfuzz::AddrType};
+use crate::{check_dep, search, tmpfs, mucfuzz::HostAddr};
 use angora_common::defs;
 use std::{
     env,
@@ -56,7 +56,7 @@ pub struct CommandOpt {
     pub directed_only: bool,
 
     /* mucfuzzer */
-    pub hostaddr: Option<AddrType>,
+    pub hostaddr: Option<HostAddr>,
 }
 
 pub fn make_absolute(path: &Path) -> PathBuf {
@@ -162,8 +162,8 @@ impl CommandOpt {
         /* mucfuzzer: begin */
         let hostaddr = if let Some(addr) = hostaddr {
             match &addr[..3] {
-                "tcp" => Some(AddrType::TCP(String::from(&addr[6..]))),
-                "udp" => Some(AddrType::UDP(String::from(&addr[6..]))),
+                "tcp" => Some(HostAddr::TCP(String::from(&addr[6..]))),
+                "udp" => Some(HostAddr::UDP(String::from(&addr[6..]))),
                 _ => {
                     error!("Wrong host address format: {}. Please give the right host address like [tcp|udp]://<ipaddr>:<port>", &addr[..3]);
                     panic!()

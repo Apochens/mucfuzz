@@ -1,21 +1,21 @@
 use std::{net::{TcpStream, UdpSocket}, fmt::{Debug, Display}};
 
 #[derive(Clone)]
-pub enum AddrType {
+pub enum HostAddr {
     TCP(String),
     UDP(String),
 }
 
-impl AddrType {
-    pub fn copy(&self) -> AddrType {
+impl HostAddr {
+    pub fn copy(&self) -> HostAddr {
         match self {
-            AddrType::TCP(addr) => AddrType::TCP(addr.to_string()),
-            AddrType::UDP(addr) => AddrType::UDP(addr.to_string()),
+            HostAddr::TCP(addr) => HostAddr::TCP(addr.to_string()),
+            HostAddr::UDP(addr) => HostAddr::UDP(addr.to_string()),
         }
     }
 }
 
-impl Debug for AddrType {
+impl Debug for HostAddr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::TCP(addr) => write!(f, "tcp://{}", addr),
@@ -24,7 +24,7 @@ impl Debug for AddrType {
     }
 }
 
-impl Display for AddrType {
+impl Display for HostAddr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::TCP(addr) => write!(f, "tcp://{}", addr),

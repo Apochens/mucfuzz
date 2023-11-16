@@ -1,7 +1,7 @@
 use super::{limit::SetLimit, *};
 
 use crate::{
-    branches, command, mucfuzz,
+    branches, command, mucfuzz::{self, Server},
     cond_stmt::{self, NextState},
     depot::{self, read_from_file}, stats, track,
     dyncfg::cfg::CmpId,
@@ -440,10 +440,7 @@ impl Executor {
                 }
                 ind_cond_list.push(fixed_cond);
             }
-
-            
         }
-
 
         for cond in cond_list.iter_mut() {
             let dyncfg = self.depot.cfg.read().unwrap();
@@ -495,45 +492,20 @@ impl Executor {
             .spawn()
             .expect("Could not run target");
 
-        if let Some(st) = &self.cmd.hostaddr {
-
+        /* mucfuzz: begin */
+        if let Some(addr) = &self.cmd.hostaddr {
+            // Fetch the testcase
             let input_buf = read_from_file(Path::new(&self.cmd.out_file));
+            debug!("Load testcase: \n{}", String::from_utf8_lossy(&input_buf));
 
-            match st {
-                mucfuzz::AddrType::TCP(addr) => {
-
-                    // Connect to the server
-                    std::thread::sleep(std::time::Duration::from_millis(100));
-                    let mut socket = TcpStream::connect(addr).expect(&format!("Cannot connect to the host {}", addr));
-                    debug!("Connect to {} ({}) successfully!", addr, child.id());
-
-                    // Send messages to the server
-                    let writed_size = socket.write(&input_buf).expect("Cannot write to the server");
-                    debug!("Write {} bytes to {}.", writed_size, &addr);
-
-                    // Receive messages from the server
-                    let mut recv_buf = vec![0; config::RECV_BUF_SIZE];
-                    let mut recved_msg: Vec<u8> = Vec::new();
-
-                    let mut size = socket.read(&mut recv_buf).unwrap();
-                    while size == recv_buf.len() {
-                        recved_msg.extend(&recv_buf[..size]);
-                        recv_buf = vec![0; config::RECV_BUF_SIZE];
-                        size = socket.read(&mut recv_buf).unwrap();
-                    }
-                    recved_msg.extend(&recv_buf[..size]);
-                    debug!("Recv {} bytes from {}: \n{}", recved_msg.len(), &addr, String::from_utf8(recved_msg.to_vec()).unwrap());
-
-                    socket.shutdown(std::net::Shutdown::Both).unwrap();
-                },
-                mucfuzz::AddrType::UDP(addr) => {
-                    unimplemented!()
-                }
-            } 
-        } else {
-            ()
+            let mut server = Server::new(addr, &self.cmd.main.0, child.id());
+            server.connect().expect("Cannot connect to the server");
+            server.execute(&input_buf).expect("Error in executing a testcase");
+            server.shutdown().expect("Error in terminating the server");
+            // child.kill().unwrap();
+            // Command::new("kill").args(["-s", "10", &child.id().to_string()]).output().unwrap();
         }
-
+        /* mucfuzz: end */
 
         let timeout = time::Duration::from_secs(time_limit);
         let ret = match child.wait_timeout(timeout).unwrap() {

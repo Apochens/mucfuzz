@@ -1,68 +1,83 @@
-use std::{net::TcpStream, io::{Write, Read}, process::Command};
+use std::{net::{TcpStream, Shutdown}, io::{Write, Read}, time::Duration};
 
 use angora_common::config;
 
-use super::{AddrType, connection::Connection};
+use super::{HostAddr, connection::Connection};
 
-pub struct Server {
-    addr: AddrType,
+pub struct Server<'a> {
+    addr: &'a HostAddr,
     delay: u64,
+    server_name: &'a str,
     server_pid: u32,
     conn: Option<Connection>,
 }
 
-impl Server {
+impl<'a> Server<'a> {
 
-    pub fn new(addr: AddrType, server_pid: u32) -> Self {
-        Self {addr, delay: config::SERVER_CONNECTION_DELAY, server_pid, conn: None}
+    pub fn new(addr: &'a HostAddr, server_name: &'a str, server_pid: u32) -> Self {
+        Self {
+            addr, 
+            delay: config::SERVER_CONNECTION_DELAY, 
+            server_name,
+            server_pid, 
+            conn: None
+        }
     }
 
+    /// Connect to the server
     pub fn connect(&mut self) -> Result<(), std::io::Error> {
         std::thread::sleep(std::time::Duration::from_millis(self.delay));
         match self.addr {
-            AddrType::TCP(addr) => {
+            HostAddr::TCP(addr) => {
                 let socket = TcpStream::connect(addr)?;
+                socket.set_read_timeout(Some(Duration::new(1, 0))).unwrap();
                 debug!("Connect to {} ({}) successfully!", addr, self.server_pid);
                 self.conn = Some(Connection::TCP(socket));
                 Ok(())
             },
-            AddrType::UDP(addr) => {
+            HostAddr::UDP(addr) => {
                 unimplemented!()
             }
         }
     }
 
-    pub fn execute(&self, input: &[u8]) -> Result<(), std::io::Error> {
+    /// Execute the testcase
+    pub fn execute(&mut self, input: &[u8]) -> Result<(), std::io::Error> {
         let mut recv_buf = vec![0; config::RECV_BUF_SIZE];
         let mut recved_msg: Vec<u8> = Vec::new();
-        match &self.conn {
-            Some(Connection::TCP(mut socket)) => {
+        match &mut self.conn {
+            Some(Connection::TCP(ref mut socket)) => {
                 // send messages to the server
                 let writed_size = socket.write(input)?;
                 debug!("Write {} bytes to {}.", writed_size, self.addr);
-                
+
                 // receive messages from the server
                 let mut size = socket.read(&mut recv_buf)?;
                 while size == recv_buf.len() {
                     recved_msg.extend(&recv_buf[..size]);
-                    recv_buf = vec![0; config::RECV_BUF_SIZE];
+                    recv_buf.clear();
                     size = socket.read(&mut recv_buf).unwrap();
                 }
                 recved_msg.extend(&recv_buf[..size]);
-                debug!("Recv {} bytes from {}: \n{}", recved_msg.len(), self.addr, String::from_utf8(recved_msg.to_vec()).unwrap());
+                debug!("Recv {} bytes from {}: \n{}", recved_msg.len(), self.addr, String::from_utf8_lossy(&recved_msg));
                 
                 Ok(())
             },
-            Some(Connection::UDP(mut socket)) => {
+            Some(Connection::UDP(ref mut socket)) => {
                 unimplemented!()
             },
-            None => {
-                Ok(())
-            }
+            None => unreachable!(),
         }
     }
 
-    pub fn shutdown() {
-        Command::new("kill").args(["-s", "9", "$(pgrep )"])
+    pub fn shutdown(&mut self) -> Result<(), std::io::Error> {
+        self.conn = match &self.conn {
+            Some(Connection::TCP(socket)) => {
+                socket.shutdown(Shutdown::Both)?;
+                None
+            },
+            _ => None,
+        };
+        Ok(())
     }
 }

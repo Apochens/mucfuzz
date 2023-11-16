@@ -63,7 +63,7 @@ impl ControlFlowGraph {
     pub fn add_edge(&mut self, edge: Edge) -> bool {
         let result = !self.has_edge(edge);
         self.handle_new_edge(edge);
-        debug!("Added CFG edge {:?} {}", edge, self.targets.contains(&edge.1));
+        // debug!("Added CFG edge {:?} {}", edge, self.targets.contains(&edge.1));
         result
     }
 
@@ -100,7 +100,7 @@ impl ControlFlowGraph {
 
     pub fn get_callsite_dominators(&self, cs: CallSiteId) -> HashSet<CmpId> {
         let res = self.callsite_dominators.get(&cs);
-        debug!("GET CALLSITE DOM: {}, {:?}", cs, res);
+        // debug!("GET CALLSITE DOM: {}, {:?}", cs, res);
         if let Some(s) = res {
             return s.clone();
         }
@@ -227,7 +227,7 @@ impl ControlFlowGraph {
     pub fn score_for_cmp(&self, cmp: CmpId) -> Score {
         let score = self._score_for_cmp(cmp);
         if score != UNDEF_SCORE {
-            debug!("Calculated score: {}", score);
+            // debug!("Calculated score: {}", score);
         }
         score
     }
@@ -235,7 +235,7 @@ impl ControlFlowGraph {
     pub fn score_for_cmp_inp(&self, cmp: CmpId, inp: Vec<u8>) -> Score {
         let score = self._score_for_cmp_inp(cmp, inp);
         if score != UNDEF_SCORE {
-            debug!("Calculated score: {}", score);
+            // debug!("Calculated score: {}", score);
         }
         score
     }
@@ -246,7 +246,7 @@ impl ControlFlowGraph {
 
     fn _score_for_cmp_inp(&self, cmp: CmpId, inp: Vec<u8>) -> Score {
         if self.targets.contains(&cmp) {
-            debug!("Calculate score for target: {}", cmp);
+            // debug!("Calculate score for target: {}", cmp);
             return TARGET_SCORE;
         }
         let mut neighbors = self.graph.neighbors_directed(cmp, Outgoing);
@@ -255,10 +255,10 @@ impl ControlFlowGraph {
         while let Some(n) = neighbors.next() {
             let edge = (cmp, n);
             if !self._should_count_edge(edge, &inp) {
-                debug!("Skipping count edge: {:?}", edge);
+                // debug!("Skipping count edge: {:?}", edge);
                 continue;
             }
-            debug!("Counting edge: {:?}", edge);
+            // debug!("Counting edge: {:?}", edge);
             if let Some(s) = self.graph.edge_weight(cmp, n) {
                 scores.push(*s);
             }

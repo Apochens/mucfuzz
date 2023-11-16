@@ -1,4 +1,4 @@
 mod server;
 mod connection;
 
-pub use self::{server::Server, connection::AddrType};
+pub use self::{server::Server, connection::HostAddr};
