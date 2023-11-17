@@ -53,4 +53,5 @@ pub const MAX_SPLICE_TIMES: usize = 45;
 
 // ************ MUCFUZZ ****************
 // server.rs
-pub const SERVER_CONNECTION_DELAY: u64 = 100; // 100ms
+pub const SERVER_CONNECTION_DELAY: u64 = 100;   // 100ms
+pub const SERVER_WRITE_RETRY_TIME: u8 = 5;      // Retry 5 times

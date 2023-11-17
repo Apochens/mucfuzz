@@ -1,4 +1,4 @@
-use std::{net::{TcpStream, Shutdown}, io::{Write, Read}, time::Duration};
+use std::{net::{TcpStream, Shutdown}, io::{Write, Read}, time::Duration, process::Command};
 
 use angora_common::config;
 
@@ -47,8 +47,18 @@ impl<'a> Server<'a> {
         let mut recved_msg: Vec<u8> = Vec::new();
         match &mut self.conn {
             Some(Connection::TCP(ref mut socket)) => {
-                // send messages to the server
-                let writed_size = socket.write(input)?;
+                // send messages to the server                
+                let mut writed_size = 0;
+                let mut tried_err = None;
+                for _ in 0..config::SERVER_WRITE_RETRY_TIME {
+                    match socket.write(input) {
+                        Ok(size) => { writed_size = size; break; },
+                        Err(e) => { tried_err = Some(e); },
+                    }
+                }
+                if writed_size == 0 {
+                    return tried_err.map(|e| Err(e)).unwrap();
+                }
                 debug!("Write {} bytes to {}.", writed_size, self.addr);
 
                 // receive messages from the server
@@ -79,5 +89,11 @@ impl<'a> Server<'a> {
             _ => None,
         };
         Ok(())
+    }
+}
+
+impl<'a> Drop for Server<'a> {
+    fn drop(&mut self) {
+        Command::new("bash").args(["-c", "kill -s 9 $(pgrep live555)"]).output().unwrap();
     }
 }
